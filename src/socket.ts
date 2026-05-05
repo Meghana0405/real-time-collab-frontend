@@ -5,5 +5,6 @@ const URL =
   "https://real-time-collab-backend.onrender.com";
 
 export const socket = io(URL, {
+  withCredentials: true,
   transports: ["websocket"]
 });
