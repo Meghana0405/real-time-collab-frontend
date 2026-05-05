@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
-import { api } from "../api/axios"; // ✅ USE YOUR GLOBAL API
+import { api } from "../api/axios";
 
 function Login() {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const setToken = useAuthStore((state) => state.setToken);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    console.log("🚀 Login button clicked");
 
     if (!email || !password) {
       alert("Enter email & password");
@@ -19,39 +20,40 @@ function Login() {
     }
 
     try {
+      setLoading(true);
 
-      console.log("🔄 Sending login request...");
+      console.log("🌐 API URL:", import.meta.env.VITE_API_URL);
 
       const response = await api.post("/login", {
         email,
         password
       });
 
+      console.log("📦 Full response:", response);
+
       const data = response.data;
 
-      console.log("✅ Login response:", data);
-
       if (data.token && data.userId) {
-
         setToken(data.token);
 
         localStorage.setItem("token", data.token);
         localStorage.setItem("userId", data.userId);
 
-        console.log("💾 Saved userId:", data.userId);
+        console.log("✅ Login success");
 
         navigate("/dashboard");
-
       } else {
         alert(data.message || "Login failed ❌");
       }
 
     } catch (error: any) {
+      console.log("❌ ERROR OBJECT:", error);
 
-      console.log("❌ Login error FULL:", error);
+      // 🔥 IMPORTANT DEBUG INFO
+      console.log("👉 Request URL was:", error.config?.baseURL);
 
       if (error.code === "ERR_NETWORK") {
-        alert("Cannot connect to server ❌\nBackend may be sleeping (Render)");
+        alert("❌ Cannot connect to backend\n\nPossible reasons:\n1. Backend sleeping (Render)\n2. Wrong API URL\n3. CORS issue");
         return;
       }
 
@@ -61,13 +63,14 @@ function Login() {
         "Server error ⚠️";
 
       alert(errorMsg);
+
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-
     <div style={{ padding: "20px" }}>
-
       <h2>Login 🔐</h2>
 
       <input
@@ -87,8 +90,8 @@ function Login() {
 
       <br /><br />
 
-      <button onClick={handleLogin}>
-        Login
+      <button onClick={handleLogin} disabled={loading}>
+        {loading ? "Connecting..." : "Login"}
       </button>
 
       <br /><br />
@@ -106,7 +109,6 @@ function Login() {
           Register here
         </span>
       </p>
-
     </div>
   );
 }
