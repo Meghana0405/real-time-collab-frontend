@@ -1,8 +1,9 @@
 import { io } from "socket.io-client";
 
-export const socket = io(
-  "https://real-time-collab-backend.onrender.com",
-  {
-    transports: ["websocket"]
-  }
-);
+const URL =
+  import.meta.env.VITE_API_URL ||
+  "https://real-time-collab-backend.onrender.com";
+
+export const socket = io(URL, {
+  transports: ["websocket"]
+});

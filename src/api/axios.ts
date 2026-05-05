@@ -1,10 +1,11 @@
 import axios from "axios";
 
-// 🌐 Use env variable if available, else fallback to your Render backend
+// 🌐 Backend URL (Vercel env OR fallback)
 const BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://real-time-collab-backend.onrender.com";
 
+// 🚀 Axios instance
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -26,7 +27,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ⚠️ Handle errors globally
+// ⚠️ Global error handler
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -35,7 +36,7 @@ api.interceptors.response.use(
 
     console.error("🚨 API Error:", status, message);
 
-    // 🔐 Auto logout if token expired
+    // 🔐 Auto logout if unauthorized
     if (status === 401 || status === 403) {
       localStorage.removeItem("token");
       window.location.href = "/";
