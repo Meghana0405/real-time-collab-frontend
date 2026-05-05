@@ -1,15 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
-import axios from "axios";
-
-// 🔥 Create axios instance directly (avoids config mistakes)
-const api = axios.create({
-  baseURL: "http://localhost:5000",
-  headers: {
-    "Content-Type": "application/json"
-  }
-});
+import { api } from "../api/axios"; // ✅ USE YOUR GLOBAL API
 
 function Login() {
 
@@ -51,18 +43,15 @@ function Login() {
         navigate("/dashboard");
 
       } else {
-
         alert(data.message || "Login failed ❌");
-
       }
 
     } catch (error: any) {
 
       console.log("❌ Login error FULL:", error);
 
-      // 🔥 Better error detection
       if (error.code === "ERR_NETWORK") {
-        alert("Cannot connect to server ❌\nCheck if backend is running on port 5000");
+        alert("Cannot connect to server ❌\nBackend may be sleeping (Render)");
         return;
       }
 
@@ -72,9 +61,7 @@ function Login() {
         "Server error ⚠️";
 
       alert(errorMsg);
-
     }
-
   };
 
   return (
@@ -121,9 +108,7 @@ function Login() {
       </p>
 
     </div>
-
   );
-
 }
 
 export default Login;
