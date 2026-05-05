@@ -10,7 +10,8 @@ export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json"
-  }
+  },
+  withCredentials: true // useful for cookies/session if needed
 });
 
 // 🔐 Attach token automatically
@@ -21,6 +22,8 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    console.log("🌐 Request URL:", config.baseURL + config.url);
 
     return config;
   },

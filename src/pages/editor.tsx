@@ -274,7 +274,7 @@ function Editor() {
         style={{
           height: 400,
           marginTop: 20,
-          background: "#fff"
+          background: "#132e3c"
         }}
       />
 
