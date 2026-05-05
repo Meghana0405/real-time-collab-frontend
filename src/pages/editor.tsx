@@ -16,18 +16,14 @@ function Editor() {
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Invite
   const [inviteEmail, setInviteEmail] = useState("");
   const [role, setRole] = useState("viewer");
 
-  // Typing
   const [typingUser, setTypingUser] = useState("");
 
-  // Comments
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState<any[]>([]);
 
-  // 🕒 History
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -53,11 +49,12 @@ function Editor() {
     return colors[h % colors.length];
   };
 
-  // SOCKET basic
+  // SOCKET
   useEffect(() => {
     socket.on("connect", () => {
       console.log("🟢 Connected:", socket.id);
     });
+
     return () => {
       socket.off("connect");
     };
@@ -67,17 +64,24 @@ function Editor() {
   useEffect(() => {
     if (!id || !quill) return;
 
-    (async () => {
-      const res = await api.get(`/documents/${id}`);
-      const data = res.data;
+    const load = async () => {
+      try {
+        const res = await api.get(`/documents/${id}`);
+        const data = res.data;
 
-      if (data?.content?.ops) {
-        quill.setContents(data.content);
-      } else {
-        quill.setText("Start typing...");
+        if (data?.content?.ops) {
+          quill.setContents(data.content);
+        } else {
+          quill.setText("Start typing...");
+        }
+
+        setIsLoaded(true);
+      } catch (err) {
+        console.error(err);
       }
-      setIsLoaded(true);
-    })();
+    };
+
+    load();
   }, [id, quill]);
 
   // COLLAB
@@ -111,17 +115,29 @@ function Editor() {
       setTimeout(() => setTypingUser(""), 1500);
     });
 
-    // cursors
-    const cursorModule = quill.getModule("cursors");
+    // ✅ FIXED CURSOR MODULE
+    const cursorModule: any = quill.getModule("cursors");
+
     quill.on("selection-change", (range: any) => {
       if (range) {
-        socket.emit("cursor-change", { documentId: id, userId, range });
+        socket.emit("cursor-change", {
+          documentId: id,
+          userId,
+          range
+        });
       }
     });
+
     socket.on("receive-cursor", ({ userId, range }) => {
       if (!cursorModule) return;
-      cursorModule.createCursor(userId, userId, getColor(userId));
-      cursorModule.moveCursor(userId, range);
+
+      cursorModule.createCursor?.(
+        userId,
+        userId,
+        getColor(userId)
+      );
+
+      cursorModule.moveCursor?.(userId, range);
     });
 
     return () => {
@@ -151,7 +167,12 @@ function Editor() {
       alert("Invalid email");
       return;
     }
-    await api.post(`/documents/${id}/invite`, { email: inviteEmail, role });
+
+    await api.post(`/documents/${id}/invite`, {
+      email: inviteEmail,
+      role
+    });
+
     alert("Invite sent 📧");
     setInviteEmail("");
   };
@@ -159,28 +180,28 @@ function Editor() {
   // COMMENTS
   const addComment = async () => {
     if (!comment) return;
+
     const res = await api.post(`/documents/${id}/comments`, {
       text: comment,
       range: { index: 0, length: 0 }
     });
+
     setComments((p) => [...p, res.data]);
     setComment("");
   };
 
-  // 🕒 LOAD HISTORY
+  // HISTORY
   const loadHistory = async () => {
     const res = await api.get(`/documents/${id}/history`);
     setHistory(res.data);
     setShowHistory(true);
   };
 
-  // 🔁 RESTORE VERSION
   const restoreVersion = async (versionId: string) => {
     const res = await api.post(
       `/documents/${id}/restore/${versionId}`
     );
 
-    // update editor immediately
     if (quill && res.data?.content) {
       quill.setContents(res.data.content);
     }
@@ -192,7 +213,6 @@ function Editor() {
     <div style={{ padding: 20 }}>
       <h2>Collaborative Editor 📝</h2>
 
-      {/* USERS */}
       <div>
         <strong>Active Users:</strong>
         {activeUsers.map((u, i) => (
@@ -202,14 +222,12 @@ function Editor() {
         ))}
       </div>
 
-      {/* TYPING */}
       {typingUser && (
         <p style={{ color: "gray" }}>
           ✍️ {typingUser} is typing...
         </p>
       )}
 
-      {/* INVITE */}
       <div style={{ marginTop: 20 }}>
         <h3>Invite 📧</h3>
         <input
@@ -227,21 +245,20 @@ function Editor() {
         <button onClick={sendInvite}>Send</button>
       </div>
 
-      {/* HISTORY BUTTON */}
       <div style={{ marginTop: 15 }}>
-        <button onClick={loadHistory}>🕒 View History</button>
+        <button onClick={loadHistory}>
+          🕒 View History
+        </button>
       </div>
 
-      {/* HISTORY LIST */}
       {showHistory && (
         <div style={{ marginTop: 10 }}>
           <h3>Version History</h3>
           <ul>
             {history.map((v: any) => (
-              <li key={v._id} style={{ marginBottom: 8 }}>
+              <li key={v._id}>
                 {new Date(v.createdAt).toLocaleString()}
                 <button
-                  style={{ marginLeft: 10 }}
                   onClick={() => restoreVersion(v._id)}
                 >
                   Restore
@@ -252,13 +269,15 @@ function Editor() {
         </div>
       )}
 
-      {/* EDITOR */}
       <div
         ref={quillRef}
-        style={{ height: 400, marginTop: 20, background: "#fff" }}
+        style={{
+          height: 400,
+          marginTop: 20,
+          background: "#fff"
+        }}
       />
 
-      {/* COMMENTS */}
       <div style={{ marginTop: 20 }}>
         <h3>Comments 💬</h3>
         <input
