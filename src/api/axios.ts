@@ -1,20 +1,18 @@
 import axios from "axios";
 
-// 🌐 Backend URL (Vercel env OR fallback)
 const BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://real-time-collab-backend.onrender.com";
 
-// 🚀 Axios instance
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json"
   },
-  withCredentials: true // useful for cookies/session if needed
+  withCredentials: true
 });
 
-// 🔐 Attach token automatically
+// 🔐 Attach token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -23,14 +21,16 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    console.log("🌐 Request URL:", config.baseURL + config.url);
+    // ✅ SAFE logging (fixes TS error)
+    const fullURL = `${config.baseURL || ""}${config.url || ""}`;
+    console.log("🌐 Request URL:", fullURL);
 
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// ⚠️ Global error handler
+// ⚠️ Error handler
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -39,7 +39,6 @@ api.interceptors.response.use(
 
     console.error("🚨 API Error:", status, message);
 
-    // 🔐 Auto logout if unauthorized
     if (status === 401 || status === 403) {
       localStorage.removeItem("token");
       window.location.href = "/";
