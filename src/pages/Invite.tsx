@@ -2,26 +2,36 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { api } from "../api/axios";
 
-function Invite(){
+function Invite() {
 
-const { token } = useParams();
+  const { token } = useParams();
 
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
-useEffect(()=>{
+  useEffect(() => {
 
-api.get(`/invite/${token}`)
-.then(res=> res.data)
-.then(data=>{
+    const joinInvite = async () => {
 
-navigate(`/editor/${data.documentId}`);
+      try {
 
-});
+        const res = await api.get(`/invite/${token}`);
 
-},[]);
+        navigate(`/editor/${res.data.documentId}`);
 
-return <h2>Joining document...</h2>;
+      } catch (err) {
 
+        console.error(err);
+
+        alert("Invalid invite link ❌");
+
+      }
+    };
+
+    joinInvite();
+
+  }, [token]);
+
+  return <h2>Joining document...</h2>;
 }
 
 export default Invite;
